@@ -48,7 +48,7 @@ transproj_eq = Transformer.from_proj(
 |e.g|20180101|2018-01-01|0|
 
 - column: ``` 'etl_ymd', 'elt_ymd_dateType', 'weekday' ```
-- weekday: 월~일(0~6)
+- weekday: 월~일 (0~6)
 
 
 
