@@ -16,6 +16,9 @@ print(df)
 |e.g|100198947|5555|3333|0|0|...|123|31140530|20180101|
 
 - column: ``` 'id', 'x', 'y', 'timezn_cd', 'm00', 'm10', 'm15', 'm20', 'm25', 'm30','m35', 'm40', 'm45', 'm50', 'm55', 'm60', 'm65', 'm70', 'f00', 'f10', 'f15', 'f20', 'f25', 'f30', 'f35', 'f40', 'f45', 'f50', 'f55', 'f60', 'f65', 'f70', 'total', 'admi_cd', 'etl_ymd' ```
+- 나이대를 좀 더 고려해 볼 수 있음
+- 시간별로 단순하게 합친 결과가 총 머문 인구라고 볼 수는 없다. (평균을 내야 할 수 있음)
+
 
 - CRS 좌표계 -> WGS 좌표계 변환 코드
 ``` python
@@ -29,6 +32,7 @@ transproj_eq = Transformer.from_proj(
 ```
 - 자세한 설명은 onedrive 링크 참조
 > https://unistackr0-my.sharepoint.com/:f:/g/personal/sjkweon_unist_ac_kr/Ep24d6BcNhJKlqjIjbNA3GkBt58WfTud8GZYfWIn_qPLzg?e=b8nysF
+
 
 ## 2. [ id_WGS ] 위치 id - WGS 좌표계 연결 테이블
 |column|*id|wgs_lat|wgs_lat|
