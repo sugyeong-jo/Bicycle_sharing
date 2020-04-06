@@ -37,6 +37,7 @@ https://github.com/sugyeong-jo/Bicycle_sharing/blob/master/data/DB.md
 # 3. 재배치 전략 수립
 - Dynamic pricing model
     > Gig economy!
+
     > 택배
 - Vehicle routing problem 
 - Equilibrium model
