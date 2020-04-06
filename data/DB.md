@@ -49,7 +49,7 @@ transproj_eq = Transformer.from_proj(
 
 - column: ``` 'etl_ymd', 'elt_ymd_dateType', 'weekday' ```
 - weekday: 월(0), 화(1), ... ,일(6)
-
+- [ ] 행사, 공휴일 컬럼 추가
 
 
 
