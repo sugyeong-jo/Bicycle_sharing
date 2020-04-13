@@ -80,7 +80,7 @@ transproj_eq = Transformer.from_proj(
 ## 6. [ id_RN ]
 
 |column|*id|rn_cd|
-|---|---|---|---|
+|---|---|---|
 |설명|위치 id|도로명 코드|
 |type|varchar(20)|int|varchar(84)|
 |e.g|10019847|1000026|
