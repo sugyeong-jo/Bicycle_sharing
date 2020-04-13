@@ -45,8 +45,8 @@ transproj_eq = Transformer.from_proj(
 
 ## 3. [ etl_ymd ] 날짜 관련 테이블
 
-|column|*etl_ymd|etl_ymd_dateType|weekday|
-|---|---|---|---|
+|column|*etl_ymd|etl_ymd_dateType|weekday|holiday|holiday_nm|
+|---|---|---|---|---|---|
 |설명|날짜|dateType 날짜|요일|
 |type|int|datetime|smallint|
 |e.g|20180101|2018-01-01|0|
@@ -56,6 +56,6 @@ transproj_eq = Transformer.from_proj(
 - [ ] 행사 (Festival), 공휴일 (Holiday) 컬럼 추가
 - [ ] 날씨 (Weather), 기온 (Temp), 미세먼지 (Dust) 컬럼 추가
 
-
+## 4. [ etl_ymd_weather ]
 
 
