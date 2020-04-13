@@ -48,14 +48,40 @@ transproj_eq = Transformer.from_proj(
 |column|*etl_ymd|etl_ymd_dateType|weekday|holiday|holiday_nm|
 |---|---|---|---|---|---|
 |설명|날짜|dateType 날짜|요일|
-|type|int|datetime|smallint|
-|e.g|20180101|2018-01-01|0|
+|type|int|datetime|smallint|smallint|varchar(10)|
+|e.g|20180101|2018-01-01|0|1|신정|
 
 - column: ``` 'etl_ymd', 'elt_ymd_dateType', 'weekday' ```
 - weekday: 월(0), 화(1), ... ,일(6)
-- [ ] 행사 (Festival), 공휴일 (Holiday) 컬럼 추가
-- [ ] 날씨 (Weather), 기온 (Temp), 미세먼지 (Dust) 컬럼 추가
+- [x] 공휴일 (Holiday) 컬럼 추가 
+- [ ] 행사 (Event), 
+- [x] 날씨 (Weather), 기온 (Temp), 미세먼지 (Dust) 컬럼 추가
 
 ## 4. [ etl_ymd_weather ]
+|column|*etl_ymd|etl_ymd_dateType|weekday|max_temp|min_temp|pm10_max|pm10_min|zungu_max|zungu_min|
+|---|---|---|---|---|---|---|---|---|---|
+|설명|날짜|dateType 날짜|요일|최고 기온|최저기온|삼산 최고 미세먼지|삼산 최저 미세먼지|무거동 최대 미세먼지|무거동 최저 미세먼지
+|type|int|datetime|smallint|smallint|varchar(10)|decimal(10,0)|decimal(10,0)|varchar(10)|varchar(10)|varchar(10)|varchar(10)|
+|e.g|20180101|2018-01-01|0|5|-0.6|142|45|142|45|
 
+- zungu -> 무거동을 의미함
+- 미세먼지에 nan 값이 있음
 
+## 5. [ RN_geo ]
+
+|column|rn|*rn_cd|geometry|
+|---|---|---|---|
+|설명|도로명|도로명 코드|linestring geometry 정보|
+|type|varchar(20)|int|varchar(84)|
+|e.g|유니스트길|01000026|0 LINSTRING ((125.xx,35.xx),...)|
+- 도로명 코드와 geometry 정보
+- [ ] geometry정보를 sql로 저장하는 것 알아보기
+
+## 6. [ id_RN ]
+
+|column|*id|rn_cd|
+|---|---|---|---|
+|설명|위치 id|도로명 코드|
+|type|varchar(20)|int|varchar(84)|
+|e.g|10019847|1000026|
+- 위치 id와 가장 가까운 도로명 할당
