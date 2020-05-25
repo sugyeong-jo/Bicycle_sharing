@@ -36,7 +36,7 @@ def createTable_stat(path, tablename):
     f = open(path, 'r')
     reader = csv.reader(f)
     longest, headers, type_list = [], [], []
-    print('--------The data is followed--------')
+    print('--------The data is followed!!--------')
     for row in islice(reader, 0, 5) :
         print(row)
         if len(headers) == 0:
@@ -61,12 +61,12 @@ def createTable_stat(path, tablename):
 
     for i in range(len(headers)):
         if type_list[i] == 'varchar':
-            statement = (statement + '\n{} varchar({}),').format(headers[i].lower(), str(longest[i]))
+            statement = (statement + '\n{} varchar(30),').format(headers[i].lower())
         else:
             statement = (statement + '\n' + '{} {}' + ',').format(headers[i].lower(), type_list[i])
 
     statement = statement[:-1] + ');'
-    print('--------The sql statement is followed--------')
+    print('--------The sql statement is followed!!!!!--------')
     print(statement)
     print('---------------------------------------------')
     return statement

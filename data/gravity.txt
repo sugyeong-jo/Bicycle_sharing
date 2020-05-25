@@ -1,0 +1,242 @@
+import pymysql
+import ast
+import pandas as pd
+import time
+import itertools
+import os
+from tqdm import tqdm_notebook
+import datetime
+
+# for data aggregation.
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+from geopy.distance import distance, lonlat
+
+# for data visualisation.
+#import plotly_express as px
+import matplotlib as mpl
+import matplotlib.pylab as plt
+import plotly
+#import plotly.plotly as py
+plotly.__version__
+import geoplot as gplt
+import geoplot.crs as gcrs
+import geopandas as gpd
+
+import cufflinks as cf 
+cf.go_offline(connected=True)
+cf.set_config_file(theme='polar')
+import deckgljupyter.Layer as deckgl
+
+import warnings
+warnings.filterwarnings('ignore')
+
+from IPython.core.interactiveshell import InteractiveShell
+InteractiveShell.ast_node_interactivity = "all"
+
+
+from shapely.geometry import Polygon
+import pyproj
+from pyproj import Transformer
+import pycrs 
+
+###
+host_name = "localhost"
+username = "sugyeong"
+password = "12341234"
+database_name = "kt_db"
+
+db = pymysql.connect(
+    host=host_name,  # DATABASE_HOST
+    port=3306,
+    user=username,  # DATABASE_USERNAME
+    passwd=password,  # DATABASE_PASSWORD
+    db=database_name,  # DATABASE_NAME
+    charset='utf8'
+)
+cursor = db.cursor()
+
+sql = """
+set session 
+sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION';
+"""
+cursor.execute(sql)
+db.commit()
+
+
+##################
+# Data load
+##################
+# - 시간 별 데이터 셋 넣어보는 것도 좋을 듯
+
+start = time.time()
+sql = """
+select a.*, b.wgs_lat, b.wgs_lon 
+from id_WGS as b, (select id, timezn_cd, total, admi_cd, etl_ymd 
+from kt where etl_ymd = '20180101') as a
+where a.id = b.id ;
+"""
+df = pd.read_sql(sql, db)
+print("time :", time.time() - start)  # 현재시각 - 시작시간 = 실행 시간
+print(df)
+df_pop = df
+
+# 울산 지도
+
+ulsan_file = "/HDD/sugyeong/Python/kt/data/TL_KODIS_BAS_31.shp"
+ulsan = gpd.read_file(ulsan_file, encoding='euckr')
+ulsan.head()
+ax = ulsan.plot(figsize=(11, 11), color="w", edgecolor="k")
+ax.set_title("Ulsan")
+ax.set_axis_off()
+plt.show()
+
+ulsan.geometry = ulsan.buffer(0.001)
+ulsan = ulsan.dissolve(by='SIG_CD')
+ax = ulsan.plot(figsize=(15, 15), column="SIG_KOR_NM", categorical=True,
+                cmap="tab20b", edgecolor="k", legend=True, legend_kwds={'loc': 3})
+ax.set_title("구 별로 묶은 서울의 기초 구역도")
+ax.set_axis_off()
+plt.show()
+
+gdf = gpd.GeoDataFrame(
+    df_pop, geometry=gpd.points_from_xy(df_pop.wgs_lon, df_pop.wgs_lat))
+
+
+gdf_time = gdf[gdf['timezn_cd']==12]
+#gdf_time = gdf_time[gdf_time['admi_cd']== 31140570]# 특정 구역
+gdf_time = gdf_time.reset_index().drop(['index'],axis=1)
+max_value = gdf_time['total'].max()
+gdf_time['total_norm'] =np.nan
+for i in range(len(gdf_time['total'])):
+    gdf_time['total_norm'][i]=gdf_time['total'][i]/max_value
+gdf_time
+
+gdf_time.plot(column='total_norm',legend=True,cmap='OrRd',scheme='quantiles')
+plt.show()
+gdf_time[gdf_time['total_norm']>0]
+
+
+#######################
+# 시각화
+#######################
+access_token = 'pk.eyJ1IjoiZGFlZG9sIiwiYSI6ImNqZGpqbmpnYzFscm8yd245YXM5MWQxeGgifQ.ACxKlSjUthNpixmVX2faMw'
+view_options = {
+    'center': [129.246, 35.537],
+    'zoom': 12,
+    'bearing': 0,
+    'pitch': 60,
+    'style': 'mapbox://styles/mapbox/dark-v9',
+    'access_token': access_token
+}
+m = deckgl.Map(**view_options)
+
+
+
+data=[]
+for i in range(len(gdf_time)):
+    if gdf_time['total_norm'][i]<0.25:
+        level = 1
+    elif 0.25<=gdf_time['total_norm'][i] and gdf_time['total_norm'][i] <0.5:
+        level = 100
+    elif 0.5<=gdf_time['total_norm'][i]  and gdf_time['total_norm'][i] <0.75:
+        level = 200
+    else :
+        level = 300
+    data.append({'position': [gdf_time['wgs_lon'][i],gdf_time['wgs_lat'][i]],
+                 'values': gdf_time['total'][i],
+                 'color': [48, gdf_time['total_norm'][i] * 255, gdf_time['total_norm'][i] * 255, 255],
+                 'level': level})
+data
+
+from deckgljupyter import Layer
+m = Layer.Map(**view_options)
+GC_layer = Layer.GridCellLayer(data,
+                               cellSize=50,
+                               getElevation='obj => obj.values',
+                               getPosition='obj => obj.position',
+                               getColor = 'obj=>obj.color'
+                              )
+m.add(GC_layer)
+m.show()
+
+
+gdf_time[gdf_time['total_norm']>0.8].head()
+
+#################
+# route 만들기
+#################
+
+# 도로 네트워크
+df_link = gpd.read_file('/HDD/sugyeong/Python/LH/data/PJT001_moc_link_2018.geojson')
+df_link.shape
+df_link.head()
+
+
+from geopy import distance
+
+
+try:
+    # 이전에 작업해놓은 이 셀을 실행한 경우, 데이터를 불러옵니다.
+    df_link_extend = pd.read_pickle('../data/df_link_extend.pkl')
+    
+except:
+    
+    new_rows = []
+    id = 0
+    for row in tqdm_notebook(df_link.itertuples(), total=len(df_link)):
+
+        # 처음 노드와 끝 노드를 미리 저장해둡니다.
+        f_node = getattr(row, 'f_node')
+        t_node = getattr(row, 't_node')
+        m_line_string = getattr(row, 'geometry')
+
+        # MultiLineString 을 2차원 [[lon, lat], [lon, lat] ...] 형태로 바꿔 coords 에 저장합니다.
+        coords = np.array([])
+        for line_string in m_line_string:
+            coords = np.append(coords, list(line_string.coords))
+        coords = coords.reshape(-1, 2)
+
+        # coords 에 있는 좌표 정보를 하나씩 읽어, 노드와 간선을 new_rows 에 저장합니다.
+        for i in range(len(coords)-1):
+            new_row = pd.Series()
+            new_row['f_node_lon'] = coords[i][0]
+            new_row['f_node_lat'] = coords[i][1]
+            new_row['t_node_lon'] = coords[i+1][0]
+            new_row['t_node_lat'] = coords[i+1][1]
+
+            new_row['DIST'] = distance.distance(
+                (new_row['f_node_lat'], new_row['f_node_lon']),
+                (new_row['t_node_lat'], new_row['t_node_lon'])
+            ).meters
+
+            if i == 0:
+                new_row['f_node'] = f_node
+            else:
+                new_row['f_node'] = new_rows[-1]['t_node']
+            new_row['t_node'] = "{}-{}-{}-{}".format(f_node, t_node, i+1, id)
+            #new_row['t_node'] = "{}-{}".format(id, i)
+
+            new_rows.append(new_row)
+
+        new_rows[-1]['t_node'] = t_node
+        id += 1
+    
+    # 위에서 만든 new_rows 를 모두 합쳐, 데이터프레임 형태로 만듭니다.
+    df_link_extend = pd.concat(new_rows, axis=1).T
+    
+    df_link_extend['DIST'] = df_link_extend['DIST'].astype('int')
+    df_link_extend = df_link_extend.dropna()
+    
+    # 작업한 내용을 피클라이저하여 저장해놓습니다.
+    df_link_extend.to_pickle('..data/df_link_extend.pkl')
+
+###############
+# Gravitiy 
+##############
+T1=gdf_time[gdf_time.id==100223324].total.values
+T2=gdf_time[gdf_time.id==100333051].total.values
+r12 = float(100)
+T1*T2/(r12**2)
+# 자전거도로/ 도보도로
