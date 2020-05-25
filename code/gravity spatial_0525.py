@@ -173,54 +173,6 @@ print(grid_geo)
 
 #%%
 ###########################################################################
-#특정 시간!
-###########################################################################
-sql = """
-select d.grid_id,c.timezn_cd ,c.total, d.geometry 
-from grid_geo as d  
-left join (select b.grid_id, a.timezn_cd, sum(total) as total
-from id_grid as b
-right join (SELECT id, timezn_cd, total  
-FROM kt  
-where etl_ymd = '20180101' and timezn_cd = 14) as a
-on  a.id = b.id
-group by b.grid_id) as c
-on d.grid_id = c.grid_id
-;
-"""
-
-df = pd.read_sql(sql, db)
-print("time :", time.time() - start)  # 현재시각 - 시작시간 = 실행 시간
-df_grid=df
-df_grid["total"]=df_grid["total"].fillna(0)
-print(df_grid)
-from shapely import wkt
-df_grid['geometry'] = df_grid['geometry'].apply(wkt.loads)
-df_grid = gpd.GeoDataFrame(df_grid, geometry = 'geometry')
-df_grid_total_time = df_grid
-
-df_grid.plot(column='total',legend=True,cmap='OrRd', scheme='quantiles')
-plt.show()
-
-#%%
-fig, ax = plt.subplots(1, figsize=(10, 6))
-ax.axis('off')
-title=str('The cell flow at the Jan., 1, 2018, at 2PM')
-ax.set_title(title, fontdict={'fontsize': '16', 'fontweight' : '3'})
-ax.annotate('Source: KT',xy=(0.1, .1),  xycoords='figure fraction', horizontalalignment='left', verticalalignment='top', fontsize=8, color='#555555')
-df_grid.plot(column='total',legend=True,cmap='OrRd', scheme='quantiles',ax=ax,linewidth=0.8,edgecolor='0')
-fig.savefig('./grid_20180101_14_quant.png', dpi=300)
-
-fig, ax = plt.subplots(1, figsize=(10, 6))
-ax.axis('off')
-title=str('The cell flow at the Jan., 1, 2018, at 2PM')
-ax.set_title(title, fontdict={'fontsize': '16', 'fontweight' : '3'})
-ax.annotate('Source: KT',xy=(0.1, .1),  xycoords='figure fraction', horizontalalignment='left', verticalalignment='top', fontsize=8, color='#555555')
-df_grid.plot(column='total',legend=True,cmap='OrRd',ax=ax,linewidth=0.8,edgecolor='0')
-fig.savefig('./grid_20180101_14.png', dpi=300)
-
-#%%
-###########################################################################
 # 모든 시간!
 ###########################################################################
 sql = """
@@ -250,6 +202,9 @@ max_total= max(df_grid['total'])
 
 
 # %%
+#######################################################
+# result
+#######################################################
 from shapely import wkt
 
 for Time in range(0,24):
